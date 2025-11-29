@@ -10,6 +10,7 @@
 * **Agent Construction:** Quickly set up basic agents or advanced tool-powered agents with minimal setup.
 * **MCP Integration:** Easily incorporate tools from a MCP Server to enable complex, external actions.
 * **Chat Support:** Supports both single-turn interactions and stateful, continuous conversations.
+* **UI (Optional):** Interactive UI to explore the AgentManager.
 
 ---
 
@@ -21,14 +22,41 @@
 
 ## 🛠️ Installation
 
-You can install `agentmanager` directly from PyPI:
+- Install the core package without UI features:
 
-```bash
-pip install agentmanager
-```
+  ```bash
+  pip install agentmanager
+  ```
+
+- To use the interactive UI, install with the [ui] extras:
+
+  ```bash
+  pip install agentmanager[ui]
+  ```
+
+- If you already have an older version of AgentManager installed, upgrade to get the latest features:
+
+  ```bash
+  pip install --upgrade agentmanager[ui]
+  ```
 
 ---
 
+# Launching the UI
+You can dive right in and explore `AgentManager’s` features through the interactive UI by running the following command in your terminal:
+
+```bash
+agentmanager-ui
+```
+
+This opens a intaractive interface in your browser, where you can:
+- Manage LLM providers
+- Configure and run agents
+- Add and use multiple MCP tools
+
+It’s a hands-on way to see everything in action.
+
+---
 
 # ℹ️ Utility Methods
 
