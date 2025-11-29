@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='AgentManager',
-    version='0.1.0',
+    version='0.1.1',
     author='Nilavo Boral',
     author_email='nilavoboral@gmail.com',
     description='Managing a unified ecosystem of LLM providers, agents, and MCP servers.',
@@ -24,6 +24,16 @@ setup(
         'langchain-ollama==1.0.0',
         'nest_asyncio==1.6.0',
     ],
+    extras_require={
+        "ui": [
+        'streamlit==1.49.1',
+        ],
+    },
+    entry_points={
+        'console_scripts': [
+            'agentmanager-ui = agentmanager.ui_launcher:main',
+        ],
+    },
     classifiers=[
         'Programming Language :: Python :: 3.11',
         'License :: OSI Approved :: MIT License',
