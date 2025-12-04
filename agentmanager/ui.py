@@ -106,33 +106,36 @@ def show_tools(tools):
 # ============================================================
 
 st.markdown("""
-    <style>
-    /* Active button style */
-    div.stButton > button:first-child {
-        background-color: #007bff;  /* Primary blue */
-        color: white;
-        border: none;
-        transition: 0.3s ease;
-        border-radius: 6px;
-    }
-    /* Hover effect for active button */
-    div.stButton > button:first-child:hover {
-        background-color: #0056b3;  /* Darker blue on hover */
-        color: white;
-    }
-    /* Disabled (faded) button style */
-    div.stButton > button:disabled {
-        background-color: #aac4f6 !important;  /* Softer, faded blue */
-        color: #333 !important;  /* Dark gray for better contrast */
-        opacity: 0.9 !important;
-        cursor: not-allowed !important;
-    }
-    </style>
+<style>
+/* Active button style */
+div.stButton button {
+    background-color: #007bff !important;
+    color: white !important;
+    border: none !important;
+    transition: 0.3s ease;
+    border-radius: 6px !important;
+}
+
+/* Hover effect */
+div.stButton button:hover {
+    background-color: #0056b3 !important;
+    color: white !important;
+}
+
+/* Disabled button style */
+div.stButton button:disabled {
+    background-color: #aac4f6 !important;
+    color: #333 !important;
+    opacity: 0.9 !important;
+    cursor: not-allowed !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
 st.set_page_config(page_title="AgentManager UI", page_icon="🤖", layout="wide")
 st.title("🤖 AgentManager UI")
 st.caption("A multi-provider chat agent, with optional MCP tools to explore the [AgentManager](https://pypi.org/project/AgentManager/).")
+
 
 # ============================================================
 # Session State Initialization
@@ -178,67 +181,95 @@ with col2:
 models = cloud_agent_manager.get_models(provider)
 model_name = st.sidebar.selectbox("Model", models, help="Select a model you want to use.")
 
-# Optional MCP Config
-with st.sidebar.expander("🔌 MCP Config (optional)", expanded=True):
+with st.sidebar.expander("MCP Config (optional)", expanded=True):
 
-    # Initialize MCP list only ONCE
     if "mcps" not in st.session_state:
-        st.session_state.mcps = []
+        st.session_state.mcps = []  # [{name, url, headers: {}}]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        number_of_mcp_servers = st.number_input("Number of MCPs", min_value=0, value="min", step=1)
+    # Add server
+    if st.button("Add Server"):
+        st.session_state.mcps.append({
+            "name": "",
+            "url": "",
+            "headers": {"Authorization": ""}  # default header
+        })
+
+    remove_server_indices = []
+
+    for i, mcp in enumerate(st.session_state.mcps):
+        st.markdown("---")
         
-        # Resize list to match selected number
-        # (Preserves existing URLs/headers instead of resetting everything)
-        if len(st.session_state.mcps) < number_of_mcp_servers:
-            # Add missing entries
-            st.session_state.mcps.extend(
-                [{"url": None}] * (number_of_mcp_servers - len(st.session_state.mcps))
-            )
-        elif len(st.session_state.mcps) > number_of_mcp_servers:
-            # Remove extra entries
-            st.session_state.mcps = st.session_state.mcps[:number_of_mcp_servers]
+        # --- Title Row (Server X + Remove Icon) ---
+        col_title, col_remove = st.columns(2)
+        with col_title:
+            st.markdown(f"## 🔗 Server {i+1}")
 
-    with col2:
-        temp_mcp_names = [f"MCP {i}" for i in range(1, number_of_mcp_servers + 1)]
-        mcp_name = st.selectbox("MCP", options=temp_mcp_names)
+        with col_remove:
+            if st.button("Remove", key=f"remove_server_{i}", help="Remove this server"):
+                remove_server_indices.append(i)
 
-    current_mcp_index = int(mcp_name[-1])-1 if mcp_name else -1  # -1 indicates no MCP server added
-    if current_mcp_index >= 0:
-
-        default_mcp_url = st.session_state.mcps[current_mcp_index]["url"]
-        st.session_state.mcps[current_mcp_index]["url"] = st.text_input(f"{mcp_name} URL", value=default_mcp_url or None)
-
+        # --- Name & URL ---
         col1, col2 = st.columns(2)
-        header = st.session_state.mcps[current_mcp_index].get("header")
-        # extract first key/value if header exists
-        if header:
-            first_key = list(header.keys())[0]
-            first_value = header[first_key]
-        else:
-            first_key = "Authorization"
-            first_value = None
-
         with col1:
-            mcp_header_name = st.text_input(
-                "Header Name (optional)",
-                value=first_key,
-                help="You can specify a custom request header name if your MCP server requires one."
+            mcp["name"] = st.text_input(
+                "Name",
+                value=mcp.get("name", ""),
+                key=f"name_{i}",
+                placeholder="My MCP Server"
             )
         with col2:
-            mcp_header_value = st.text_input(
-                "Header Value (optional)",
-                value=first_value,
-                type="password",
-                help="You can specify a custom request header value if your MCP server requires one."
+            mcp["url"] = st.text_input(
+                "URL",
+                value=mcp.get("url", ""),
+                key=f"url_{i}",
+                placeholder="https://server.com"
             )
-        # --- Save back to session state ---
-        # Always store {} -> {name: value}
-        if mcp_header_name and mcp_header_value:
-            st.session_state.mcps[current_mcp_index]["header"] = {
-                mcp_header_name: mcp_header_value
-            }
+
+        # --- Header Section ---
+        with st.expander("Headers (optional)", expanded=False):
+
+            headers_to_delete = []
+
+            for header_key in list(mcp["headers"].keys()):
+                header_val = mcp["headers"][header_key]
+
+                colA, colB, colC = st.columns([5, 5, 1])
+
+                with colA:
+                    new_key = st.text_input(
+                        "Header Name",
+                        value=header_key,
+                        key=f"header_key_{i}_{header_key}",
+                    )
+                with colB:
+                    new_val = st.text_input(
+                        "Header Value",
+                        value=header_val,
+                        key=f"header_val_{i}_{header_key}",
+                        type="password",
+                    )
+                with colC:
+                    if st.button("✖️", key=f"remove_header_{i}_{header_key}", help="Remove this header"):
+                        headers_to_delete.append(header_key)
+
+                # update or rename header key
+                if new_key != header_key:
+                    mcp["headers"][new_key] = new_val
+                    del mcp["headers"][header_key]
+                else:
+                    mcp["headers"][header_key] = new_val
+
+            # delete selected headers
+            for key in headers_to_delete:
+                del mcp["headers"][key]
+
+            # add new header
+            if st.button("Add Header", key=f"add_header_{i}"):
+                mcp["headers"][""] = ""
+
+    # remove servers after loop
+    for idx in sorted(remove_server_indices, reverse=True):
+        del st.session_state.mcps[idx]
 
 
 # ============================================================
