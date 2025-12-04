@@ -191,19 +191,21 @@ class CloudAgentManager:
 
         Args:
             llm: Initialized LLM instance.
-            mcps (Optional[List[Dict[str, Any]]]): List of MCP configurations. 
+            mcps (Optional[List[Dict[str, Any]]]): List of MCP configurations.
                 Each dict can have:
-                    - "url" (str): MCP service URL.
-                    - "header" (Optional[Dict[str, str]]): Single header as {name: value}.
+                    - "name" (str): Custom name for MCP server.
+                    - "url" (str): MCP server URL.
+                    - "headers" (Optional[Dict[str, str]]): 
+                        Dictionary of headers, e.g. {"Authorization": "Bearer XYZ"}
 
         Returns:
-            Tuple[Any, Optional[List[Any]]]: Agent instance, and a combined list of tools if MCPs are used, else None.
-
+            Tuple[Any, Optional[List[Any]]]: Agent instance and a list of loaded tools.
+        
         Raises:
             RuntimeError: If agent or MCP initialization fails.
         """
 
-        # If MCP is not required → simple agent
+        # No MCP → basic agent
         if not mcps:
             try:
                 agent = create_agent(llm)
@@ -211,28 +213,33 @@ class CloudAgentManager:
             except Exception as e:
                 raise RuntimeError(f"Failed to create agent: {e}") from e
 
-        # MCP config
         mcp_config: Dict[str, Any] = {}
 
         for mcp in mcps:
-            url = mcp.get("url", "").strip()
-            if not url:
+            name = (mcp.get("name") or "").strip()
+            url = (mcp.get("url") or "").strip()
+            if not url or not name:
                 continue
 
-            mcp_config[f"name_{url}"] = {"transport": "streamable_http", "url": url}
+            # Prepare MCP entry
+            mcp_config[name] = {
+                "transport": "streamable_http",
+                "url": url,
+            }
 
-            header = mcp.get("header")
-            if header and isinstance(header, dict):
-                mcp_config[f"name_{url}"]["headers"] = header
+            headers = mcp.get("headers", {})
+            if isinstance(headers, dict) and headers:
+                # Use headers dict directly
+                mcp_config[name]["headers"] = {k.strip(): v.strip() for k, v in headers.items() if k and v}
 
-        # Initialize MCP
+        # Initialize MCP client
         try:
             client = MultiServerMCPClient(mcp_config)
             tools = await client.get_tools()
         except Exception as e:
             raise RuntimeError(f"Failed to initialize MCP: {e}") from e
 
-        # Agent with tools
+        # Create agent with tools
         try:
             agent = create_agent(llm, tools)
             return agent, tools
