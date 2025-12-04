@@ -6,10 +6,11 @@
 
 ## ✨ Features
 
-* **Universal Provider Support:** Seamlessly connect to various LLM providers (e.g., Google, OpenAI) through a single line code.
+* **Universal Provider Support:** Seamlessly connect to various cloud LLM providers (e.g., **Google**, **OpenAI**, **Ollama**, **Mistral**, **Groq**) through a single line code.
 * **Agent Construction:** Quickly set up basic agents or advanced tool-powered agents with minimal setup.
 * **MCP Integration:** Easily incorporate tools from a MCP Server to enable complex, external actions.
 * **Chat Support:** Supports both single-turn interactions and stateful, continuous conversations.
+* **UI (Optional):** Interactive UI to explore the AgentManager.
 
 ---
 
@@ -21,14 +22,43 @@
 
 ## 🛠️ Installation
 
-You can install `agentmanager` directly from PyPI:
+- Install the core package without UI features:
 
-```bash
-pip install agentmanager
-```
+  ```bash
+  pip install agentmanager
+  ```
+
+- To use the interactive UI, install with the [ui] extras:
+
+  ```bash
+  pip install agentmanager[ui]
+  ```
+
+- If you already have an older version of AgentManager installed, upgrade to get the latest features:
+
+  ```bash
+  pip install --upgrade agentmanager[ui]
+  ```
 
 ---
 
+# Launching the UI
+You can dive right in and explore `AgentManager’s` features through the interactive UI by running the following command in your terminal:
+
+```bash
+agentmanager-ui
+```
+
+This opens a intaractive interface in your browser, where you can:
+- Manage LLM providers
+- Configure and run agents
+- Add and use multiple MCP tools
+
+It’s a hands-on way to see everything in action.
+
+![AgentManager UI](https://github.com/NilavoBoral/AgentManager/blob/v0.1.1/Demo/AgentManager%20UI.gif)
+
+---
 
 # ℹ️ Utility Methods
 
@@ -160,7 +190,15 @@ if __name__ == "__main__":
 
 ## ⚙️ Advanced: Agent with MCP Tools
 
-If your agent needs to interact with external services via a Model Context Protocol (MCP), you can pass the configuration during agent preparation.
+If your agent needs to interact with external tools via a Model Context Protocol (MCP), you can provide a list of MCP server configurations during agent preparation.
+
+Each MCP entry can include:
+- `name` (str): A unique name for the MCP server (required)
+- `url` (str): Your MCP server's URL (required)
+- `headers` (Optional[Dict[str, str]]): Dictionary of headers, e.g. 
+  ```python
+  {"Authorization": "Bearer XYZ", "X-Custom": "ABC123", ...}
+  ```
 
 ```python
 import asyncio
@@ -172,19 +210,24 @@ PROVIDER = "google" # !!! REPLACE WITH PROVIDER YOU WANT TO USE !!!
 API_KEY = "YOUR_API_KEY_HERE" # !!! REPLACE WITH PROVIDER'S API KEY !!!
 MODEL_NAME = "gemini-2.5-flash" # !!! REPLACE WITH MODEL YOU WANT TO USE !!!
 
-# Define MCP configuration
+# Define multiple MCP configurations (name, url, optional multiple headers)
 mcps=[
     {
-        "url":"MCP_URL_1" # !!! REPLACE WITH YOUR ACTUAL MCP URL !!!
+        "name": "MyFirstServer",
+        "url": "MCP_URL_1" # !!! REPLACE WITH YOUR MCP URL !!!
     },
     {
-        "url":"MCP_URL_2", # !!! REPLACE WITH YOUR ACTUAL MCP URL !!!
+        "name": "MySecondServer",
+        "url": "MCP_URL_2", # !!! REPLACE WITH YOUR MCP URL !!!
         # Optional: Custom headers for authentication/routing
-        "header":{
-            "HEADER_NAME": "HEADER_VALUE" # !!! REPLACE WITH YOUR ACTUAL HEADER NAME & VALUE !!!
+        "header": {
+            # !!! REPLACE WITH YOUR ACTUAL HEADER NAMES & VALUES !!!
+            "FIRST_HEADER_NAME": "FIRST_HEADER_VALUE",
+            "SECOND_HEADER_NAME": "SECOND_HEADER_VALUE",
+            # Add more headers as needed ...
         }
     },
-    # ...
+    # Add more MCP servers as needed ...
 ]
 
 async def mcp_agent_example():
