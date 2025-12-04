@@ -56,7 +56,7 @@ This opens a intaractive interface in your browser, where you can:
 
 It’s a hands-on way to see everything in action.
 
-![AgentManager UI](https://github.com/NilavoBoral/AgentManager/blob/v0.1.1/Demo/AgentManager%20UI.gif)
+![AgentManager UI](https://raw.githubusercontent.com/NilavoBoral/AgentManager/v0.1.1/Demo/AgentManager%20UI.gif)
 
 ---
 
